@@ -1,5 +1,6 @@
 // Use absolute URLs so this works reliably on Vercel and ensures correct scope.
-const CACHE_NAME = "top-daily-tips-v2";
+// Bump this when you deploy so phones stop serving old cached JS.
+const CACHE_NAME = "top-daily-tips-v3";
 const CORE_ASSETS = [
   "/",
   "/index.html",
@@ -25,20 +26,42 @@ self.addEventListener("activate",(event)=>{
 self.addEventListener("fetch",(event)=>{
   const req = event.request;
   if(req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  const isSameOrigin = url.origin === self.location.origin;
+
+  // Network-first for the app shell so updates actually reach users.
+  const isAppShell = isSameOrigin && (
+    url.pathname === "/" ||
+    url.pathname.endsWith("/index.html") ||
+    url.pathname.endsWith("/app.js") ||
+    url.pathname.endsWith("/styles.css")
+  );
+
+  if(isAppShell){
+    event.respondWith(
+      fetch(req)
+        .then(res=>{
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache=>cache.put(req, copy));
+          return res;
+        })
+        .catch(()=>caches.match(req))
+    );
+    return;
+  }
+
+  // Cache-first for everything else.
   event.respondWith(
     caches.match(req).then(cached=>{
       if(cached) return cached;
       return fetch(req).then(res=>{
-        // Cache same-origin only
-        try{
-          const url = new URL(req.url);
-          if(url.origin === self.location.origin){
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then(cache=>cache.put(req, copy));
-          }
-        }catch(e){}
+        if(isSameOrigin){
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache=>cache.put(req, copy));
+        }
         return res;
-      }).catch(()=>cached);
+      });
     })
   );
 });
