@@ -1,0 +1,1570 @@
+
+body{background:#0f172a;color:#e2e8f0;font-family:Inter,sans-serif;margin:0;padding:20px}
+.main-header{text-align:center;margin-bottom:30px}
+.logo-3d{font-size:42px;font-weight:800;color:#fff;text-shadow:0 0 20px rgba(0,255,140,.6)}
+.tabs button{background:#1e293b;color:#fff;border:none;padding:8px 16px;border-radius:8px;margin:0 5px;cursor:pointer}
+.tabs .active{background:#334155}
+
+/* Value Bets: keep cards readable on mobile (single column).
+   Wider multi-column layouts are enabled only on larger screens via layout toggles below. */
+.bets-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+
+.history-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+body.layout-wide .history-grid{
+  grid-template-columns: 1fr !important;
+}
+
+/* Daily History should always be one row per day (prevents overlap in "desktop mode" on mobile) */
+/* Value Bets - desktop table view (shown in WIDE mode on large screens) */
+.bets-table-wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+.bets-table{width:100%;border-collapse:separate;border-spacing:0 10px;display:none}
+.bets-table thead th{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(180,205,230,.75);text-align:left;padding:0 14px 8px}
+.bets-table tbody tr{background:rgba(30,41,59,0.70);border:1px solid rgba(255,255,255,0.06)}
+.bets-table tbody td{padding:14px;color:rgba(240,248,255,.92);vertical-align:middle}
+.bets-table tbody tr td:first-child{border-left:4px solid rgba(0,255,140,.35);border-top-left-radius:14px;border-bottom-left-radius:14px}
+.bets-table tbody tr td:last-child{border-top-right-radius:14px;border-bottom-right-radius:14px;text-align:right;white-space:nowrap}
+.bets-table .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.12);font-weight:800}
+.bets-table .btn{padding:10px 16px;border-radius:999px;border:1px solid rgba(0,255,140,.35);background:rgba(0,0,0,.25);color:#dfffea;font-weight:900;cursor:pointer}
+.bets-table .btn.added{background:rgba(0,255,140,.10)}
+.card{
+  background: rgba(30,41,59,0.70);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:13px;
+  line-height:1.3;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+  backdrop-filter: blur(6px);
+}
+
+.tracker-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:30px;
+  flex-wrap:nowrap;
+}
+input{background:#1e293b;border:1px solid #334155;color:#fff;padding:6px;width:65px;border-radius:6px}
+button{background:#334155;color:#fff;border:none;padding:6px 12px;border-radius:8px;cursor:pointer}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:14px;
+  margin-top:25px;     /* space under Starting Bankroll row */
+  margin-bottom:25px;
+}
+.stat-card{background:#1e293b;padding:16px;border-radius:14px;text-align:center}
+.glow-green{box-shadow:0 0 20px rgba(34,197,94,.55)}
+.glow-red{box-shadow:0 0 20px rgba(239,68,68,.55)}
+
+canvas{margin-bottom:20px}
+
+table{width:100%;border-collapse:collapse;}
+th,td{padding:6px 4px;border-bottom:1px solid #334155;font-size:13px}
+th{text-align:left}
+
+/* Date column (tracker results) */
+.date-col{width:72px;white-space:nowrap;opacity:0.9}
+
+.profit-col{text-align:right;white-space:nowrap}
+
+.profit-win{color:#22c55e;font-weight:600}
+.profit-loss{color:#ef4444;font-weight:600}
+
+.result-select{border-radius:6px;padding:4px}
+
+.result-won{
+  background:rgba(34,197,94,0.15);
+  color:#22c55e;
+  border:1px solid rgba(34,197,94,0.35);
+}
+
+.result-lost{
+  background:rgba(239,68,68,0.15);
+  color:#ef4444;
+  border:1px solid rgba(239,68,68,0.35);
+}
+
+.result-pending{
+  background:#1e293b;
+  color:#cbd5e1;
+  border:1px solid #334155;
+}
+
+
+/* Enhanced Collapsible */
+.tracker-history{margin-top:20px}
+
+.tracker-toggle{
+  background:#1e293b;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  transition:0.2s ease;
+}
+
+.tracker-toggle:hover{background:#243044}
+
+#trackerWrapper{
+  overflow:hidden;
+  transition:max-height 0.35s ease, opacity 0.25s ease;
+}
+
+#trackerWrapper.collapsed{
+  max-height:0;
+  opacity:0;
+}
+
+#trackerWrapper.expanded{
+  max-height:2000px;
+  opacity:1;
+}
+
+
+/* Analytics strip */
+.analytics-strip{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 14px 0 10px 0;
+}
+
+.mini-card{
+  background: rgba(30,41,59,0.55);
+  border: 1px solid rgba(51,65,85,0.55);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+}
+
+.mini-label{
+  font-size: 12px;
+  opacity: 0.78;
+  margin-bottom: 6px;
+}
+
+.mini-value{
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-value.positive{ color: #22c55e; }
+.mini-value.negative{ color: #ef4444; }
+
+/* Chart tabs */
+.chart-tabs{
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 10px 0;
+}
+
+.tab-btn{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(51,65,85,0.55);
+  background: rgba(30,41,59,0.35);
+  color: #e2e8f0;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.tab-btn.active{
+  background: rgba(34,197,94,0.16);
+  border-color: rgba(34,197,94,0.35);
+}
+
+/* Chart panes */
+.chart-wrap{
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.chart-pane{
+  display: none;
+}
+
+.chart-pane.active{
+  display: block;
+}
+
+#chart, #marketChart{
+  width: 100% !important;
+  height: 300px !important;
+}
+
+#monthlyChart{
+  width: 100% !important;
+  height: 400px !important;
+}
+
+.bet-count{
+  opacity: 0.85;
+  font-weight: 800;
+}
+
+
+/* Insights dropdown (replaces 4 mini-cards) */
+.insights{ width:100%; margin: 8px 0 12px; }
+.insights-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 0 2px; }
+.insights-title{ margin:0; font-size: 18px; letter-spacing: 0.2px; }
+.insights-select{
+  appearance:none;
+  background: rgba(255,255,255,0.06);
+  color: #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-weight: 700;
+  outline: none;
+  min-width: 150px;
+}
+.insights-select:focus{
+  border-color: rgba(34,197,94,0.55);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+}
+
+.insights-card{
+  margin-top: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  padding: 14px 14px;
+}
+.insight-label{ opacity:0.75; font-weight: 700; margin-bottom: 6px; }
+.insight-value{ font-size: 20px; font-weight: 900; letter-spacing: 0.2px; }
+.insights-hidden{ display:none; }
+
+
+/* Collapsible Insights */
+.insights-wrapper{margin:20px 0}
+
+.insights-toggle{
+  background:#1e293b;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  transition:0.2s ease;
+}
+
+.insights-toggle:hover{background:#243044}
+
+#insightsContent{
+  overflow:hidden;
+  transition:max-height 0.35s ease, opacity 0.25s ease;
+}
+
+.insights-collapsed{
+  max-height:0;
+  opacity:0;
+}
+
+.insights-expanded{
+  max-height:600px;
+  opacity:1;
+}
+
+.monthly-breakdown{margin-top:20px}
+.monthly-toggle{
+  background:#1e293b;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+}
+#monthlyWrapper{
+  overflow:hidden;
+  transition:max-height 0.35s ease, opacity 0.25s ease;
+}
+#monthlyWrapper.collapsed{max-height:0;opacity:0}
+#monthlyWrapper.expanded{max-height:2000px;opacity:1}
+
+
+
+
+/* ===== FINAL CLEAN STARTING BANKROLL ALIGNMENT ===== */
+
+.tracker-controls{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:20px;
+}
+
+.tracker-controls label{
+  min-width:160px;
+  margin:0;
+}
+
+#startingBankroll{
+  width:80px;
+}
+
+.tracker-controls button{
+  margin-left:0;
+}
+
+/* keep stake/result sizing */
+#trackerTable input[type="number"]{
+  width:65px;
+}
+
+#trackerTable select{
+  min-width:90px;
+  width:90px;
+  padding:4px 6px;
+}
+
+
+/* ===== Mobile Fit Tracker Table ===== */
+@media (max-width: 600px){
+
+  #trackerTable th,
+  #trackerTable td{
+    font-size:12px;
+    padding:6px 2px;
+  }
+
+  .date-col{
+    width:60px;
+    font-size:11px;
+  }
+
+  #trackerTable input[type="number"]{
+    width:55px;
+  }
+
+  #trackerTable select{
+    width:75px;
+    min-width:75px;
+    font-size:11px;
+    padding:3px;
+  }
+
+  .profit-col{
+    font-size:12px;
+  }
+
+}
+
+
+/* ===== Tracker Filters UI ===== */
+
+.tracker-filters{
+  display:flex;
+  gap:8px;
+  margin:12px 0 10px 0;
+  flex-wrap:wrap;
+}
+
+.tracker-filters input{
+  width:auto;
+  min-width:110px;
+  padding:6px 8px;
+}
+
+.tracker-filters button{
+  padding:6px 10px;
+  font-size:12px;
+}
+
+
+
+/* ===== Value Bets: compact tiles ===== */
+.bet-card{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.bet-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+  border-color: rgba(34,197,94,0.22);
+}
+
+.bet-title{
+  font-size:14px;
+  margin:0;
+  font-weight:800;
+  letter-spacing:0.1px;
+}
+
+.bet-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:12px;
+  opacity:0.86;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.bet-market{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.bet-date{
+  opacity:0.75;
+}
+
+.bet-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:2px;
+}
+
+.odds-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  white-space:nowrap;
+}
+
+.odds-badge strong{
+  font-weight:900;
+}
+
+.bet-btn{
+  padding:5px 9px;
+  font-size:12px;
+  border-radius:8px;
+  background: rgba(34,197,94,0.16);
+  border: 1px solid rgba(34,197,94,0.30);
+  color:#e2e8f0;
+  font-weight:800;
+}
+
+.bet-btn:hover{
+  background: rgba(34,197,94,0.22);
+}
+
+/* Added state (no popup; button changes + locks to prevent duplicates) */
+.bet-btn.added{
+  border-color: rgba(34,197,94,0.85);
+  background: rgba(34,197,94,0.30);
+  color: #ecfff5;
+  cursor: default;
+}
+
+.bet-btn:disabled{
+  opacity: 0.95;
+}
+
+.bet-btn.flash{
+  animation: betBtnFlash .65s ease;
+}
+
+@keyframes betBtnFlash{
+  0%{ transform: scale(1); filter: brightness(1); }
+  40%{ transform: scale(1.06); filter: brightness(1.35); }
+  100%{ transform: scale(1); filter: brightness(1); }
+}
+
+
+
+
+/* Make the whole layout compact on mobile without touching desktop much */
+@media (max-width: 600px){
+  body{ padding: 14px; }
+
+  .main-header{ margin-bottom: 18px; }
+  .logo-3d{ font-size: 34px; }
+
+  .tabs button{
+    padding: 8px 14px;
+    border-radius: 12px;
+  }
+
+  .bets-grid{
+    gap: 10px;
+  }
+
+  .bet-title{
+    font-size: 15px;
+  }
+
+  .bet-meta{
+    font-size: 12px;
+  }
+
+  .odds-badge{
+    padding: 5px 8px;
+  }
+
+  .bet-btn{
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+}
+
+/* Super small phones: single-column for maximum readability */
+@media (max-width: 360px){
+  .bets-grid{ grid-template-columns: 1fr; }
+}
+
+
+/* ===== Value Bets: Option 1 — Sharp Sportsbook ===== */
+.bet-card{
+  position: relative;
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.28);
+}
+
+.bet-card::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:3px;
+  background: rgba(34,197,94,0.95);
+  border-radius: 14px 0 0 14px;
+  opacity: 0.9;
+}
+
+/* --- Daily History card tweaks (compact + no green strip) --- */
+.history-card{
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+  margin: 0 0 14px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.history-content{ padding-top: 4px; }
+
+.history-title{
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.1px;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.history-market{
+  opacity: 0.82;
+  font-size: 14px;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+.history-card::before{ display:none; }
+
+.history-card-top{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Grid wrapper used by history bet cards */
+.history-odds{
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Odds + result icon layout */
+.history-odds-grid{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.history-odds{
+  font-size: 15px;
+  opacity: 0.92;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.history-odds-grid .result-badge{
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+}
+
+
+/* Icon-only result badge (no WON/LOST text) */
+.history-card .result-badge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 16px;
+  line-height: 1;
+}
+
+
+.history-card .result-badge .emoji{
+  font-size:16px;
+  line-height:1;
+}
+
+/* Day groups (collapsible sections) */
+.history-day{
+  margin: 18px 0;
+}
+.history-day-header{ padding: 14px 14px; margin-bottom: 12px; }
+.history-day .history-day-list{ margin-top: 10px; }
+.history-day.collapsed .history-day-bets{ display:none; }
+
+.history-summary-actions{ display:flex; align-items:center; gap:10px; }
+.history-chips.compact{ display:flex; gap:10px; flex-wrap:wrap; }
+
+.bet-title{
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+}
+
+.bet-meta{
+  opacity: 0.72;
+}
+
+.odds-badge{
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.bet-btn{
+  background: rgba(34,197,94,0.15);
+  border: 1px solid rgba(34,197,94,0.35);
+}
+
+.bet-card:hover{
+  transform: translateY(-2px);
+  border-color: rgba(34,197,94,0.22);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.32);
+}
+
+/* Mobile: slightly tighter but same footprint */
+@media (max-width: 600px){
+  .bet-title{ font-size: 15px; }
+  .bet-meta{ font-size: 12px; }
+}
+
+
+/* ===== Value Bets: High Value glow (manual flag) ===== */
+/* Add a boolean column: value_bets.high_value = true for featured bets */
+.bet-card--hv{
+  border-color: rgba(34,197,94,0.38);
+  box-shadow:
+    0 0 14px rgba(34,197,94,0.22),
+    0 12px 28px rgba(0,0,0,0.30);
+}
+
+.bet-card--hv::before{
+  opacity: 1;
+}
+
+.bet-card--hv .odds-badge{
+  background: rgba(34,197,94,0.14);
+  border-color: rgba(34,197,94,0.40);
+}
+
+
+
+/* ===== Value % chip (Value Bets cards) ===== */
+.bet-stats{
+  display:flex;
+  gap:8px;
+  margin-top:2px;
+}
+
+.stat-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 8px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.stat-chip__k{
+  opacity:0.70;
+  font-weight:800;
+  letter-spacing:0.2px;
+}
+
+.stat-chip__v{
+  font-weight:900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------
+   Daily History
+---------------------------- */
+.history-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.history-controls label {
+  color: rgba(255,255,255,0.75);
+  font-size: 14px;
+}
+
+.history-controls select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.9);
+  outline: none;
+}
+
+.ghost-btn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  cursor: pointer;
+}
+
+.ghost-btn:active {
+  transform: translateY(1px);
+}
+
+.history-summary {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+}
+
+/* Daily History header layout */
+.history-summary-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.history-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+
+.history-date{
+  font-weight:700;
+  letter-spacing:0.2px;
+  white-space:nowrap;
+}
+
+.history-ratio{
+  flex:0 0 auto;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.9);
+  font-weight:700;
+}
+
+.history-card {
+  /* no side strip in Daily History */
+  border-left: none;
+}
+
+/* Slightly roomier padding so text doesn't touch edges */
+.history-card.card{
+  padding-top: 12px;
+  padding-bottom: 10px;
+}
+
+.history-card.win {
+  border-color: rgba(34, 197, 94, 0.9);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18), 0 18px 45px rgba(0,0,0,0.25);
+}
+
+.history-card.loss {
+  border-color: rgba(239, 68, 68, 0.9);
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.18), 0 18px 45px rgba(0,0,0,0.25);
+}
+
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+/* Smaller badge inside History cards */
+.history-card .result-badge{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;
+  height:28px;
+  padding:0;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: transparent;
+  min-width:28px;
+  min-height:28px;
+}
+
+
+.history-card .result-badge .emoji{
+  font-size:14px;
+  line-height:1;
+}
+
+.result-badge.win {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.result-badge.loss {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+
+.pill-sm{
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+}
+
+.pill-sm.win{
+  border-color:rgba(34,197,94,0.4);
+  background:rgba(34,197,94,0.12);
+}
+
+.pill-sm.loss{
+  border-color:rgba(239,68,68,0.4);
+  background:rgba(239,68,68,0.12);
+}
+
+.pill-sm.pending{
+  border-color:rgba(245,158,11,0.4);
+  background:rgba(245,158,11,0.12);
+}
+
+/* Small utility buttons (used in Daily History collapse) */
+.btn{
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.06);
+  color:rgba(255,255,255,0.92);
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn:hover{ background:rgba(255,255,255,0.09); }
+.btn:active{ transform: translateY(1px); }
+.btn-secondary{ background:rgba(255,255,255,0.06); }
+.btn-sm{ padding:8px 12px; font-size:13px; border-radius:999px; }
+
+
+/* Daily History status borders */
+.history-card.won { border: 2px solid rgba(32, 190, 118, 0.9); }
+.history-card.lost { border: 2px solid rgba(220, 60, 60, 0.9); }
+.history-card.pending { border: 2px solid rgba(220, 170, 60, 0.6); }
+
+.history-card .history-content { flex: 1; }
+
+.history-odds-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top: 6px;
+}
+
+.history-day-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.history-day-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex: 0 0 auto;
+}
+
+.history-day-ratio{
+  margin-left:0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Day summary chips (Won/Lost/Pending) */
+.history-day-chips{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.history-chip{
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.history-chip.won{ border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.08); }
+.history-chip.lost{ border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); }
+.history-chip.pending{ border-color: rgba(234,179,8,0.35); background: rgba(234,179,8,0.08); }
+
+.history-toggle{
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ===== Daily History (table layout) ===== */
+.history-day { margin-bottom: 18px; }
+
+.history-day-header { padding-bottom: 10px; }
+
+.history-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-day-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.history-day-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-day-ratio {
+  min-width: 56px;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-weight: 800;
+}
+
+.history-toggle {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.9);
+  font-weight: 700;
+}
+
+/* When the toggle is used as a section header (Daily History), make it match Monthly Breakdown */
+.daily-toggle.history-toggle{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 10px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  width: 100%;
+}
+
+.history-day-chips {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;              /* mobile: allow wrap so it never feels "zoomed out" */
+  overflow-x: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop Wide: keep chips on one line like Tracker */
+@media (min-width: 900px){
+  body.layout-wide .history-day-chips{
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+/* when chips are placed inside the header button */
+.history-day-chips.inline{
+  margin-top: 0;
+}
+
+/* Daily History header uses same look/feel as Monthly Breakdown toggle */
+.daily-toggle{
+  width: 100%;
+  border: none;
+  text-align: left;
+}
+
+.daily-toggle-left{ display:flex; align-items:center; gap:10px; }
+.daily-toggle-center{ flex: 1; display:flex; justify-content:center; min-width:0; }
+.daily-toggle-right{ display:flex; align-items:center; gap:12px; }
+.daily-chevron{ opacity: 0.8; font-weight: 900; }
+
+.history-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 13px;
+}
+
+.history-chip span { opacity: 0.85; }
+
+.history-chip strong { font-weight: 900; }
+
+.history-day-bets { margin-top: 12px; }
+
+.history-table-wrap {
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.12);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table thead th {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 14px;
+  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.04);
+}
+
+.history-table td {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.hcell-match { font-weight: 800; }
+.hcell-market { color: rgba(255,255,255,0.78); }
+.hcell-odds { white-space: nowrap; font-weight: 800; }
+.hcell-result { width: 44px; text-align: right; font-size: 18px; }
+
+.history-row.won { box-shadow: inset 3px 0 0 rgba(63, 201, 121, 0.65); }
+.history-row.lost { box-shadow: inset 3px 0 0 rgba(234, 78, 78, 0.65); }
+.history-row.pending { box-shadow: inset 3px 0 0 rgba(214, 170, 70, 0.55); }
+
+.history-day.collapsed .history-day-bets { display: none; }
+
+
+/* ---- Daily History header: inline chips, neat fit ---- */
+.daily-toggle.history-toggle{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.daily-toggle-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.daily-toggle-left span{
+  overflow:hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+  display:inline-block;
+  vertical-align: bottom;
+}
+
+.daily-toggle-center{
+  min-width: 0;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap: nowrap;
+  overflow: visible;
+}
+
+.daily-toggle-center .history-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.daily-toggle-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  white-space: nowrap;
+}
+
+/* Mobile: keep the SAME header button, but stack chips UNDER the date so all are visible */
+@media (max-width: 520px){
+  .daily-toggle.history-toggle{
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "left right"
+      "chips chips";
+    row-gap: 10px;
+  }
+
+  .daily-toggle-left{ grid-area: left; }
+  .daily-toggle-right{ grid-area: right; }
+
+  .daily-toggle-center{
+    grid-area: chips;
+    justify-content:flex-start;
+    gap:10px;
+    overflow-x: auto;                 /* safety for super small devices */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .daily-toggle-center::-webkit-scrollbar{ display:none; }
+
+  .daily-toggle-left span{ max-width: 220px; }
+
+  .daily-toggle-center .history-chip{
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Very small phones: slightly tighter chips but still visible */
+@media (max-width: 380px){
+  .daily-toggle-left span{ max-width: 160px; }
+  .daily-toggle-center .history-chip{ padding: 6px 9px; font-size: 12px; gap:6px; }
+}
+
+.daily-toggle-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  white-space: nowrap;
+}
+
+.daily-toggle-left span{
+  overflow:hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+  display:inline-block;
+  vertical-align: bottom;
+}
+
+.daily-toggle-center{
+  min-width: 0;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.daily-toggle-center .history-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.daily-toggle-center .history-chip span{
+  opacity: 0.85;
+}
+
+.daily-toggle-center .history-chip strong{
+  font-weight: 900;
+}
+
+.daily-toggle-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  white-space: nowrap;
+}
+
+/* Small phones: keep inline, slightly tighter text */
+@media (max-width: 420px){
+  .daily-toggle-left span{ max-width: 120px; }
+  .daily-toggle-center{ justify-content:flex-start; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .daily-toggle-center::-webkit-scrollbar{ display:none; }
+  .daily-toggle-center .history-chip{ padding: 6px 9px; font-size: 12px; gap:6px; }
+  .daily-toggle-center .history-chip span{ display:none; } /* hide labels only on very small screens */
+}
+
+
+/* ---- Daily History Winrate ---- */
+.history-ratio-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  line-height:1.1;
+}
+
+.history-winrate{
+  font-size:12px;
+  opacity:0.75;
+  margin-top:4px;
+}
+
+@media (max-width:520px){
+  .history-winrate{ font-size:11px; }
+}
+
+
+/* ---- Winrate label styling + alignment ---- */
+.history-ratio-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  line-height:1.1;
+}
+
+/* push winrate slightly lower so it aligns visually with the chip row */
+.history-winrate{
+  font-size:14px;          /* bigger */
+  font-weight:800;
+  opacity:0.92;
+  margin-top:10px;         /* moved down */
+  letter-spacing:0.2px;
+}
+
+/* colour by winrate */
+.history-winrate.wr-hot{ color: rgba(34,197,94,0.95); text-shadow: 0 0 14px rgba(34,197,94,0.25); }
+.history-winrate.wr-good{ color: rgba(34,197,94,0.85); }
+.history-winrate.wr-mid{ color: rgba(245,158,11,0.90); }
+.history-winrate.wr-bad{ color: rgba(239,68,68,0.90); }
+
+/* small phones */
+@media (max-width:520px){
+  .history-winrate{ font-size:13px; margin-top:10px; }
+}
+
+/* ===== Layout Mode (Compact / Wide) ===== */
+:root{
+  --app-max: 980px;
+  --app-pad: 18px;
+  --card-radius: 18px;
+}
+
+body{
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: var(--app-pad);
+}
+
+/* Compact: slightly tighter + smaller max width */
+body.layout-compact{
+  --app-max: 760px;
+  --app-pad: 14px;
+}
+
+/* Wide: breathe on desktop */
+body.layout-wide{
+  /* On small screens Wide behaves like Compact; wide spacing kicks in on desktop via media query below */
+  --app-max: 760px;
+  --app-pad: 14px;
+}
+
+/* Top controls row */
+.top-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin: 10px 0 14px 0;
+}
+
+/* Mobile: keep Logout visible (wrap onto next line if needed) */
+@media (max-width: 520px){
+  .top-controls{
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .layout-switch{ flex: 1 1 auto; }
+  .logout-btn{
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+}
+
+.layout-switch{
+  display:inline-flex;
+  gap:0;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  overflow:hidden;
+}
+
+.layout-btn{
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.88);
+  padding: 8px 12px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.layout-btn.active{
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.98);
+}
+
+/* Logout button matches pill look */
+.logout-btn{
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+}
+.logout-btn:hover{
+  background: rgba(255,255,255,0.08);
+}
+
+
+/* Wide layout: apply multi-column / extra spacing only when there's room */
+@media (min-width: 900px){
+  body.layout-wide{
+    --app-max: 1180px;
+    --app-pad: 22px;
+  }
+  body.layout-wide .bets-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px){
+  body.layout-wide .bets-grid{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Keep Daily History as single-column even in Wide mode */
+body.layout-wide .history-days{
+  grid-template-columns: 1fr !important;
+}
+
+/* In WIDE mode on desktop, Value Bets switches to table rows */
+@media (min-width: 980px){
+  body.layout-wide #betsGrid{display:none}
+  body.layout-wide .bets-table{display:table}
+}
+
+/* =========================
+   Subscriber auth gate
+   ========================= */
+
+body.locked header,
+body.locked main,
+body.locked .tabs,
+body.locked .page,
+body.locked .layout-toggle-wrap,
+body.locked .page-container,
+body.locked .floating-menu {
+  display: none !important;
+}
+
+/* Show auth gate while locked */
+body.locked #authGate { display: flex; }
+body:not(.locked) #authGate { display: none; }
+
+.auth-gate{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(1200px 600px at 50% 0%, rgba(0,255,170,0.07), transparent 60%),
+              linear-gradient(180deg, rgba(10,16,29,0.92), rgba(10,16,29,0.96));
+  z-index: 9999;
+}
+
+.auth-card{
+  width: min(420px, 100%);
+  background: rgba(18, 28, 48, 0.82);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.45);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+}
+
+.auth-card h2{
+  margin: 0 0 6px 0;
+  font-size: 22px;
+  color: #e9f1ff;
+}
+
+.auth-sub{
+  margin: 0 0 14px 0;
+  opacity: 0.85;
+}
+
+.auth-label{
+  display: block;
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.auth-input{
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(10, 16, 29, 0.55);
+  color: #e9f1ff;
+  outline: none;
+}
+
+.auth-input:focus{
+  border-color: rgba(0,255,170,0.35);
+  box-shadow: 0 0 0 3px rgba(0,255,170,0.10);
+}
+
+.auth-actions{
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.auth-btn{
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: #e9f1ff;
+  cursor: pointer;
+}
+
+.auth-btn-primary{
+  border-color: rgba(0,255,170,0.25);
+  background: rgba(0,255,170,0.10);
+}
+
+.auth-btn-secondary{
+  border-color: rgba(255,255,255,0.12);
+}
+
+.auth-btn:hover{
+  filter: brightness(1.08);
+}
+
+.auth-msg{
+  min-height: 18px;
+  margin-top: 12px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+
+
+
+/* === Auth Gate responsive tweaks (override) === */
+.auth-gate{
+  padding:16px;
+  overflow:auto;
+}
+@media (max-height:700px){
+  .auth-gate{align-items:flex-start; padding-top:24px;}
+}
+.auth-card{width:100%; max-width:520px;}
