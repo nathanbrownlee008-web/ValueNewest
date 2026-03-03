@@ -3,6 +3,60 @@ const SUPABASE_URL="https://krmmmutcejnzdfupexpv.supabase.co";
 const SUPABASE_KEY="sb_publishable_3NHjMMVw1lai9UNAA-0QZA_sKM21LgD";
 const client=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
+function pad2(n){return String(n).padStart(2,'0');}
+function toLocalYMD(d=new Date()){
+  const yr=d.getFullYear();
+  const mo=pad2(d.getMonth()+1);
+  const da=pad2(d.getDate());
+  return `${yr}-${mo}-${da}`;
+}
+function normalizeDateOnly(value){
+  if(!value) return null;
+  if(typeof value==='string'){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const dt=new Date(value);
+    if(!Number.isNaN(dt.getTime())) return toLocalYMD(dt);
+    return null;
+  }
+  const dt=new Date(value);
+  if(!Number.isNaN(dt.getTime())) return toLocalYMD(dt);
+  return null;
+}
+function isValueBetActiveToday(row){
+  const today=toLocalYMD(new Date());
+  const start=normalizeDateOnly(row.bet_date) || normalizeDateOnly(row.created_at);
+  const end=normalizeDateOnly(row.bet_end_date) || start;
+  if(!start) return false;
+  return today >= start && today <= end;
+}
+
+
+// ===== Layout Mode (Compact / Wide) =====
+const btnCompact = document.getElementById("btnCompact");
+const btnWide = document.getElementById("btnWide");
+
+function applyLayout(mode){
+  document.body.classList.remove("layout-compact","layout-wide");
+  document.body.classList.add(mode === "wide" ? "layout-wide" : "layout-compact");
+  localStorage.setItem("layout_mode", mode);
+  if(btnCompact) btnCompact.classList.toggle("active", mode !== "wide");
+  if(btnWide) btnWide.classList.toggle("active", mode === "wide");
+}
+
+(function initLayoutMode(){
+  const saved = localStorage.getItem("layout_mode");
+  if(saved === "wide" || saved === "compact"){
+    applyLayout(saved);
+  }else{
+    // Default: compact on small screens, wide on desktop
+    applyLayout(window.innerWidth >= 950 ? "wide" : "compact");
+  }
+  if(btnCompact) btnCompact.addEventListener("click", ()=>applyLayout("compact"));
+  if(btnWide) btnWide.addEventListener("click", ()=>applyLayout("wide"));
+})();
+
+// (Install App / PWA install button removed for now)
+
 const bankrollElem=document.getElementById("bankroll");
 const profitElem=document.getElementById("profit");
 const roiElem=document.getElementById("roi");
@@ -16,13 +70,10 @@ const profitCard=document.getElementById("profitCard");
 const addedKeys = new Set();
 
 function makeBetKey(row){
-  // Prefer stable IDs if present
-  if(row && row.id != null) return `id:${row.id}`;
-  const m = row?.match ?? '';
-  const mk = row?.market ?? '';
-  const o = row?.odds ?? '';
-  const d = row?.bet_date ?? row?.match_date ?? row?.created_at ?? '';
-  return `k:${m}|${mk}|${o}|${d}`;
+  const match = (row?.match ?? "").toString().trim();
+  const market = (row?.market ?? "").toString().trim();
+  const odds = (row?.odds ?? "").toString().trim();
+  return `k:${match}|${market}|${odds}`;
 }
 
 // Top navigation tabs
@@ -30,6 +81,20 @@ const tabHistoryEl = document.getElementById("tabHistory");
 const historySectionEl = document.getElementById("historySection");
 const historyDaySelectEl = document.getElementById("historyDaySelect");
 const historyListEl = document.getElementById("historyList");
+
+if(historyListEl){
+  historyListEl.addEventListener("click",(e)=>{
+    const btn = e.target.closest(".history-toggle");
+    if(!btn) return;
+    const dayKey = btn.dataset.day;
+    if(!dayKey) return;
+    // Daily History accordion: default collapsed, store open state per day.
+    window.__historyOpen = window.__historyOpen || JSON.parse(localStorage.getItem('history_open')||'{}');
+    window.__historyOpen[dayKey] = !window.__historyOpen[dayKey];
+    localStorage.setItem('history_open', JSON.stringify(window.__historyOpen));
+    renderHistory();
+  });
+}
 const historySummaryEl = document.getElementById("historySummary");
 const historyRefreshEl = document.getElementById("historyRefresh");
 
@@ -59,24 +124,7 @@ function switchTab(tab){
   }
 }
 
-if(historyDaySelectEl){
-  // Dropdown acts as a "jump to day" control (we still show all days stacked).
-  historyDaySelectEl.addEventListener("change", ()=>{
-    const v = historyDaySelectEl.value;
-    renderHistory();
-    if(v && v !== "__all__"){
-      const el = document.getElementById(`history-day-${v}`);
-      if(el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  });
-}
 
-if(historyRefreshEl){
-  historyRefreshEl.addEventListener("click", async ()=>{
-    await loadTracker();
-    renderHistory();
-  });
-}
 
 async function loadBets(){
   // Rebuild "Added" state from tracker every time we render the feed.
@@ -97,8 +145,12 @@ async function loadBets(){
 
 const {data}=await client.from("value_bets_feed").select("*").order("value_pct",{ascending:false,nullsFirst:false}).order("created_at",{ascending:false});
 betsGrid.innerHTML="";
-if(!data || !data.length){ betsGrid.innerHTML = `<div class="card">No bets found in value_bets_feed.</div>`; return; }
- (data || []).forEach(row=>{
+const betsTable=document.getElementById('betsTable');
+const betsTbody=betsTable ? betsTable.querySelector('tbody') : null;
+if(betsTbody) betsTbody.innerHTML = "";
+const active=(data||[]).filter(isValueBetActiveToday);
+if(!active.length){ betsGrid.innerHTML = `<div class="card">No bets for today.</div>`; return; }
+ (active || []).forEach(row=>{
   const key = makeBetKey(row);
   const isAdded = addedKeys.has(key);
 betsGrid.innerHTML+=`
@@ -116,6 +168,25 @@ betsGrid.innerHTML+=`
     <button class="bet-btn ${isAdded ? 'added' : ''}" ${isAdded ? 'disabled' : ''} onclick='addToTracker(this, ${JSON.stringify(row)})'>${isAdded ? 'Added' : 'Add'}</button>
   </div>
 </div>`;
+
+  // Desktop table row (shown via CSS in WIDE mode on large screens)
+  if(betsTbody){
+    const betDate = row.bet_date || (row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '');
+    const val = (row.value_pct ?? row.value_percent ?? row.value_percentage ?? row.value);
+    const valTxt = val != null ? Number(val).toFixed(1)+'%' : '—';
+    betsTbody.innerHTML += `
+      <tr>
+        <td><b>${escapeHtml(row.match||'')}</b></td>
+        <td>${escapeHtml(row.market||'')}</td>
+        <td><span class="pill">${escapeHtml(String(row.odds??''))}</span></td>
+        <td><span class="pill">${escapeHtml(valTxt)}</span></td>
+        <td>${escapeHtml(betDate)}</td>
+        <td>
+          <button class="btn ${isAdded ? 'added' : ''}" ${isAdded ? 'disabled' : ''} onclick='addToTracker(this, ${JSON.stringify(row)})'>${isAdded ? 'Added' : 'Add'}</button>
+        </td>
+      </tr>
+    `;
+  }
 });
 }
 
@@ -134,7 +205,7 @@ async function addToTracker(btn, row){
     match: row.match,
     market: row.market,
     odds: row.odds,
-    stake: 10,
+        stake: 10,
     result: "pending"
   };
 
@@ -147,8 +218,10 @@ async function addToTracker(btn, row){
     console.error("Insert failed:", error);
     if(btn){
       btn.disabled = false;
-      btn.textContent = 'Add';
+      btn.textContent = "Add";
     }
+    // Quick visible feedback (mobile)
+    try{ alert("Could not add bet. Check tracker table columns / RLS."); }catch(e){}
     return;
   }
 
@@ -356,147 +429,111 @@ function formatDayLabelLong(dayKey){
 }
 
 function renderHistory(){
-  const rows = (trackerRowsCache || []).filter(r=>r.result && r.result !== "");
+  const iconFor = (res)=>{
+    if(res==='won') return '✅';
+    if(res==='lost') return '❌';
+    return '⏳';
+  };
 
-  // Group by day
-  const grouped = new Map();
-  rows.forEach(r=>{
-    const k = dayKeyFromRow(r);
-    if(!grouped.has(k)) grouped.set(k, []);
-    grouped.get(k).push(r);
-  });
-  const dayKeys = Array.from(grouped.keys()).sort().reverse();
+  if(!historySummaryEl || !historyListEl) return;
 
-    // Optional dropdown/summary controls (removed in some builds)
-  if (historyDaySelectEl) {
-    // Dropdown becomes "jump to day" (history renders all days stacked)
-    const prev = historyDaySelectEl.value;
-    historyDaySelectEl.innerHTML = "";
-    const optAll = document.createElement("option");
-    optAll.value = "all";
-    optAll.textContent = "All days";
-    historyDaySelectEl.appendChild(optAll);
-
-    dayKeys.forEach((k) => {
-      const o = document.createElement("option");
-      o.value = k;
-      o.textContent = formatDayLabel(k);
-      historyDaySelectEl.appendChild(o);
-    });
-
-    // Keep selection if still valid
-    if (prev && [...historyDaySelectEl.options].some((o) => o.value === prev)) {
-      historyDaySelectEl.value = prev;
-    } else {
-      historyDaySelectEl.value = "all";
-    }
+  const rows = Array.isArray(trackerRowsCache) ? trackerRowsCache : [];
+  const groups = {};
+  for(const b of rows){
+    const dayKey = dayKeyFromRow(b);
+    if(!dayKey) continue;
+    (groups[dayKey] ||= []).push(b);
   }
 
-  // Summary chips (optional)
-  if (historySummaryEl) {
-    // Show quick overall summary when dropdown exists; otherwise per-day cards already show it.
-    if (historyDaySelectEl && historyDaySelectEl.value !== "all") {
-      const k = historyDaySelectEl.value;
-      const rows = grouped[k] || [];
-      const won = rows.filter((r) => r.result === "won").length;
-      const lost = rows.filter((r) => r.result === "lost").length;
-      const pending = rows.filter((r) => r.result === "pending").length;
-      historySummaryEl.innerHTML = renderHistorySummary(won, lost, pending, won + lost + pending);
-    } else {
-      historySummaryEl.innerHTML = "";
-    }
-  }
-
-// We no longer use the single summary at the top.
+  const dayKeys = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
   historySummaryEl.innerHTML = "";
-  historySummaryEl.style.display = "none";
 
-  // Collapsible per day key
-  window.__historyCollapsed = window.__historyCollapsed || {};
+  window.__historyOpen = window.__historyOpen || JSON.parse(localStorage.getItem('history_open')||'{}');
 
-  historyListEl.innerHTML = "";
-  if(dayKeys.length===0){
-    historyListEl.innerHTML = `<div class="empty">No settled bets yet.</div>`;
-    return;
-  }
+  const fmtDay = (dayKey)=>{
+    const d = new Date(dayKey + "T00:00:00");
+    if(Number.isNaN(d.getTime())) return dayKey;
+    // "01 Mar 2026"
+    return d.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" });
+  };
 
-  dayKeys.forEach(dayKey=>{
-    const dayRows = grouped.get(dayKey) || [];
+  const renderBet = (b)=>{
+    const result = (b.result || "pending").toLowerCase();
+    const cls = (result==="won"||result==="lost") ? result : "pending";
+    const match = (b.match || "").toString().trim() || "—";
+    const market = (b.market || "").toString().trim() || "—";
+    const odds = (b.odds ?? "").toString().trim() || "—";
 
-    // Default each day to collapsed (user can expand by tapping the day header)
-    if(!(dayKey in window.__historyCollapsed)) window.__historyCollapsed[dayKey] = true;
+    return `
+      <tr class="history-row ${cls}">
+        <td class="hcell-match">${escapeHtml(match)}</td>
+        <td class="hcell-market">${escapeHtml(market)}</td>
+        <td class="hcell-odds">${escapeHtml(odds)}</td>
+        <td class="hcell-result" aria-label="${cls}">${iconFor(cls)}</td>
+      </tr>
+    `;
+  };
 
-    let won=0,lost=0,pending=0;
-    dayRows.forEach(r=>{
-      const res = String(r.result || "pending").toLowerCase();
-      if(res==="won") won++;
-      else if(res==="lost") lost++;
-      else pending++;
-    });
-    const ratio = `${won}/${won+lost || 0}`;
+  let html = "";
+  for(const dayKey of dayKeys){
+    if(window.__historyOpen[dayKey] === undefined) window.__historyOpen[dayKey] = false;
 
-    const wrap = document.createElement("div");
-    wrap.className = "history-day";
-    wrap.id = `history-day-${dayKey}`;
-    const collapsed = !!window.__historyCollapsed[dayKey];
-    if(collapsed) wrap.classList.add("collapsed");
+    const bets = groups[dayKey].slice().sort((a,b)=> (a.id||0)-(b.id||0));
+    const won = bets.filter(b => (b.result||"pending").toLowerCase()==="won").length;
+    const lost = bets.filter(b => (b.result||"pending").toLowerCase()==="lost").length;
+    const pending = bets.length - won - lost;
 
-    wrap.innerHTML = `
-      <div class="history-summary">
-        <div class="history-summary-top">
-          <div class="history-left">
-            <div class="history-date">${formatDayLabelLong(dayKey)}</div>
-            <button class="btn btn-secondary btn-sm history-toggle" type="button">${collapsed ? "Show" : "Hide"}</button>
+    const settled = won + lost;
+    const ratio = `${won}/${settled || 0}`;
+    const winrate = settled ? Math.round((won / settled) * 100) : 0;
+
+    const collapsed = !window.__historyOpen[dayKey];
+
+    html += `
+      <div class="history-day ${collapsed ? "collapsed" : ""}" id="history-day-${dayKey}">
+        <button class="monthly-toggle daily-toggle history-toggle" data-day="${dayKey}">
+          <div class="daily-toggle-left">📅 <span>${fmtDay(dayKey)}</span></div>
+
+          <div class="daily-toggle-center">
+            <div class="history-chip won">✅ <span>Won</span> <strong>${won}</strong></div>
+            <div class="history-chip lost">❌ <span>Lost</span> <strong>${lost}</strong></div>
+            <div class="history-chip pending">⏳ <span>Pending</span> <strong>${pending}</strong></div>
           </div>
-          <div class="history-ratio">${ratio}</div>
-        </div>
-        <div class="history-chips compact">
-          <div class="pill-sm win">✅ Won <strong>${won}</strong></div>
-          <div class="pill-sm loss">❌ Lost <strong>${lost}</strong></div>
-          <div class="pill-sm pending">⏳ Pending <strong>${pending}</strong></div>
+
+          <div class="daily-toggle-right">
+            <div class="history-ratio-wrap">
+              <span class="history-day-ratio">${ratio}</span>
+              <span class="history-winrate ${winrate>=70 ? "wr-hot" : winrate>=55 ? "wr-good" : winrate>=40 ? "wr-mid" : "wr-bad"}">${winrate>=70 ? "🔥 " : ""}Winrate ${winrate}%</span>
+            </div>
+            <span class="daily-chevron">${collapsed ? "▼" : "▲"}</span>
+          </div>
+        </button>
+          <div class="history-day-bets">
+          <div class="history-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Match</th>
+                  <th>Market</th>
+                  <th class="th-odds">Odds</th>
+                  <th class="th-res"></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${bets.map(renderBet).join("")}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <div class="history-day-list"></div>
     `;
+  }
 
-    const list = wrap.querySelector(".history-day-list");
-    dayRows
-      .slice()
-      .sort((a,b)=>{
-        const da = new Date(a.bet_date || a.created_at || 0).getTime();
-        const db = new Date(b.bet_date || b.created_at || 0).getTime();
-        return db - da;
-      })
-      .forEach(r=>{
-        const res = String(r.result || "pending").toLowerCase();
-        const cls = res==="won" ? "win" : (res==="lost" ? "loss" : "pending");
-        const icon = res==="won" ? "✅" : (res==="lost" ? "❌" : "⏳");
+  if(!dayKeys.length){
+    html = `<div class="empty">No history yet.</div>`;
+  }
 
-        const card=document.createElement("div");
-        card.className = `bet-card history-card ${cls}`;
-
-        const odds = Number(r.odds)||0;
-        // Compact: match, market, odds on the left; icon-only result badge on the right.
-        card.innerHTML = `
-          <div class="history-card-grid">
-            <div class="history-card-main">
-              <div class="history-match">${escapeHtml(r.match || "")}</div>
-              <div class="history-market">${escapeHtml(r.market || "")}</div>
-              <div class="history-odds">Odds <strong>${odds || "-"}</strong></div>
-            </div>
-            <div class="result-badge ${cls}" aria-label="${res}"><span class="emoji">${icon}</span></div>
-          </div>
-        `;
-        list.appendChild(card);
-      });
-
-    wrap.querySelector(".history-toggle").onclick = ()=>{
-      window.__historyCollapsed[dayKey] = !window.__historyCollapsed[dayKey];
-      renderHistory();
-    };
-
-    historyListEl.appendChild(wrap);
-  });
+  historyListEl.innerHTML = html;
 }
 
 function isEndOfDay(index, labels){
@@ -560,6 +597,10 @@ const {data}=await client.from("bet_tracker").select("*").order("created_at",{as
 const rows = data || [];
 trackerRowsCache = rows;
 trackerAllRows = rows;
+
+// Keep Value Bets \"Added\" state synced with tracker rows
+addedKeys.clear();
+rows.forEach(r => addedKeys.add(makeBetKey(r)));
 wireTrackerFilters();
 
 let start=parseFloat(document.getElementById("startingBankroll").value);
