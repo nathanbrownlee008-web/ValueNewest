@@ -1,99 +1,7 @@
 
-
-// Supabase config: you can override in index.html via window.__SUPABASE_URL / window.__SUPABASE_KEY
-// or by setting localStorage SUPABASE_URL / SUPABASE_KEY in the browser console.
-const DEFAULT_SUPABASE_URL="https://krmmmutcejnzdfupexpv.supabase.co";
-const DEFAULT_SUPABASE_KEY="sb_publishable_3NHjMMVw1lai9UNAA-0QZA_sKM21LgD";
-const SUPABASE_URL=(window.__SUPABASE_URL||localStorage.getItem('SUPABASE_URL')||DEFAULT_SUPABASE_URL).trim();
-const SUPABASE_KEY=(window.__SUPABASE_KEY||localStorage.getItem('SUPABASE_KEY')||DEFAULT_SUPABASE_KEY).trim();
+const SUPABASE_URL="https://krmmmutcejnzdfupexpv.supabase.co";
+const SUPABASE_KEY="sb_publishable_3NHjMMVw1lai9UNAA-0QZA_sKM21LgD";
 const client=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-async function _checkSupabaseConfig(){
-  try{
-    const { error } = await client.from('value_bets_feed_preview').select('id').limit(1);
-    if(error){
-      console.warn('Supabase config check failed:', error);
-      window.__SUPABASE_CONFIG_ERROR = error;
-    }
-  }catch(e){
-    console.warn('Supabase config check exception:', e);
-    window.__SUPABASE_CONFIG_ERROR = e;
-  }
-}
-_checkSupabaseConfig();
-
-
-
-// --- Subscriber auth / access state ---
-let session = null;
-let accessActive = false;
-
-function escapeHTML(str){
-  return String(str ?? '').replace(/[&<>"]+/g, (ch)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[ch]||ch));
-}
-
-function showMsg(text,isError=false){
-  const el=document.getElementById('authMsg');
-  if(!el) return;
-  el.textContent=text||'';
-  el.style.color=isError?'#ffb4b4':'#eaf6f4';
-}
-
-function setAuthButton(){
-  const btn=document.getElementById('authButton');
-  if(!btn) return;
-  btn.textContent = session ? 'Account' : 'Log in';
-}
-
-function openAuthModal(){
-  const m=document.getElementById('authModal');
-  if(!m) return;
-  m.classList.remove('hidden');
-  m.setAttribute('aria-hidden','false');
-  const logout=document.getElementById('btnLogout');
-  if(logout) logout.classList.toggle('hidden', !session);
-  showMsg('');
-}
-
-function closeAuthModal(){
-  const m=document.getElementById('authModal');
-  if(!m) return;
-  m.classList.add('hidden');
-  m.setAttribute('aria-hidden','true');
-}
-
-function renderSubscriptionGate(){
-  const gate=document.getElementById('subscriptionGate');
-  if(!gate) return;
-  if(session && accessActive){
-    gate.innerHTML = '<div class="gate-card">✅ <strong>Subscriber access active</strong>. Full feed unlocked.</div>';
-    return;
-  }
-  gate.innerHTML = `
-    <div class="gate-card">
-      <div><strong>Free preview:</strong> first 10 bets today.</div>
-      <div style="margin-top:6px; opacity:.9">Log in to unlock the rest. Everyone gets a 5‑day free trial. The £5 first month offer is limited to the first 50 people.</div>
-      <div class="gate-actions">
-        <button class="auth-btn" id="gateLoginBtn">Log in / Sign up</button>
-        <button class="auth-btn" id="gateTrialBtn">Start 5‑day trial</button>
-      </div>
-    </div>`;
-  document.getElementById('gateLoginBtn')?.addEventListener('click', openAuthModal);
-  document.getElementById('gateTrialBtn')?.addEventListener('click', openAuthModal);
-}
-
-async function refreshSessionAndAccess(){
-  const { data } = await client.auth.getSession();
-  session = data?.session ?? null;
-  setAuthButton();
-  if(session){
-    const { data: ok, error } = await client.rpc('has_active_access', { p_user: session.user.id });
-    accessActive = !error && !!ok;
-  }else{
-    accessActive = false;
-  }
-  renderSubscriptionGate();
-}
 
 function pad2(n){return String(n).padStart(2,'0');}
 function toLocalYMD(d=new Date()){
@@ -193,7 +101,6 @@ const historyRefreshEl = document.getElementById("historyRefresh");
 let currentTopTab = "bets"; // 'bets' | 'tracker' | 'history'
 let trackerRowsCache = [];
 
-tabFree.onclick=()=>switchTab("free");
 tabBets.onclick=()=>switchTab("bets");
 tabTracker.onclick=()=>switchTab("tracker");
 if(tabHistoryEl) tabHistoryEl.onclick=()=>switchTab("history");
@@ -220,137 +127,68 @@ function switchTab(tab){
 
 
 async function loadBets(){
-  const betsTable = document.getElementById("valueBetsTable");
-  if(!betsTable) return;
-
-  betsTable.innerHTML = '<div class="loading">Loading bets…</div>';
-
-  const today = toLocalYMD(new Date()); // YYYY-MM-DD (device local)
-  let rows = [];
-
-  // Prefer a "today" view if you created one, otherwise fall back to filtering the feed
-  const trySources = [
-    async () => client.from("value_bets_today").select("*"),
-    async () => client.from("value_bets_feed").select("*").eq("bet_date", today)
-  ];
-
-  let lastErr = null;
-  for (const run of trySources){
-    const { data, error } = await run();
-    if(!error && Array.isArray(data)){
-      rows = data;
-      lastErr = null;
-      break;
+  // Rebuild "Added" state from tracker every time we render the feed.
+  // This ensures that if a bet is deleted from the tracker, the feed button returns to "Add".
+  addedKeys.clear();
+  // Preload tracker rows so already-added bets render as "Added"
+  try{
+    const { data: tdata, error: terr } = await client
+      .from("bet_tracker")
+      .select("match,market,odds")
+      .limit(1000);
+    if(!terr && Array.isArray(tdata)){
+      tdata.forEach(r => addedKeys.add(makeBetKey(r)));
     }
-    lastErr = error || lastErr;
+  }catch(e){
+    // Ignore preload failures
   }
 
-  // If still nothing, show empty state
-  if(!rows || rows.length === 0){
-    betsTable.innerHTML = '<div class="empty">No value bets for today.</div>';
-    if(lastErr) console.warn("Value bets load error:", lastErr);
-    return;
-  }
+const {data}=await client.from("value_bets_feed").select("*").order("value_pct",{ascending:false,nullsFirst:false}).order("created_at",{ascending:false});
+betsGrid.innerHTML="";
+const betsTable=document.getElementById('betsTable');
+const betsTbody=betsTable ? betsTable.querySelector('tbody') : null;
+if(betsTbody) betsTbody.innerHTML = "";
+const active=(data||[]).filter(isValueBetActiveToday);
+if(!active.length){ betsGrid.innerHTML = `<div class="card">No bets for today.</div>`; return; }
+ (active || []).forEach(row=>{
+  const key = makeBetKey(row);
+  const isAdded = addedKeys.has(key);
+betsGrid.innerHTML+=`
+<div class="card bet-card ${row.high_value ? 'bet-card--hv' : ''}">
+  <h3 class="bet-title">${row.match}</h3>
+  <div class="bet-meta">
+    <span class="bet-market">${row.market}</span>
+    <span class="bet-date">${row.bet_date || (row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '')}</span>
+  </div>
+  <div class="bet-stats">
+    <span class="stat-chip"><span class="stat-chip__k">Value</span><span class="stat-chip__v">${(row.value_pct ?? row.value_percent ?? row.value_percentage ?? row.value) != null ? Number(row.value_pct ?? row.value_percent ?? row.value_percentage ?? row.value).toFixed(1)+'%' : '—'}</span></span>
+  </div>
+  <div class="bet-footer">
+    <span class="odds-badge">Odds <strong>${row.odds}</strong></span>
+    <button class="bet-btn ${isAdded ? 'added' : ''}" ${isAdded ? 'disabled' : ''} onclick='addToTracker(this, ${JSON.stringify(row)})'>${isAdded ? 'Added' : 'Add'}</button>
+  </div>
+</div>`;
 
-  // Enforce today's filter even if the view returns more than expected
-  rows = rows.filter(r => isValueBetActiveToday(r, today));
-
-  // Sort newest first (created_at if available, else id)
-  rows.sort((a,b)=>{
-    const ta = a.created_at ? Date.parse(a.created_at) : (a.id ?? 0);
-    const tb = b.created_at ? Date.parse(b.created_at) : (b.id ?? 0);
-    return tb - ta;
-  });
-
-  renderBets(rows);
-}
-
-async function loadFreeBets() {
-  // Free Bets: same UI as Value Bets but pulls from free_bets_feed
-  freeBetsGrid.innerHTML = "";
-  setBetsLoading(true, "Loading free bets...");
-
-  const { data, error } = await supabase
-    .from("free_bets_feed")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  setBetsLoading(false);
-
-  if (error) {
-    console.error("loadFreeBets error:", error);
-    freeBetsGrid.innerHTML = `<div class="empty">Could not load free bets.</div>`;
-    return;
-  }
-
-  const rows = (data || []).filter(isValueBetActiveToday);
-
-  if (!rows.length) {
-    freeBetsGrid.innerHTML = `<div class="empty">No free bets for today.</div>`;
-    return;
-  }
-
-  // Render using the same card template as Value Bets.
-  for (const row of rows) {
-    const card = document.createElement("div");
-    card.className = "bet-card";
-
-    const match = escapeHtml(row.match || "");
-    const market = escapeHtml(row.market || "");
-    const selection = escapeHtml(row.selection || "");
-    const odds = row.odds != null ? String(row.odds) : "";
-    const valuePct = row.value_pct != null ? Number(row.value_pct).toFixed(1) : "";
-    const betDate = row.bet_date ? String(row.bet_date) : "";
-
-    // Use the same "added" storage so it stays consistent across tabs
-    const key = betKey(row);
-    const isAdded = addedBetKeys.has(key);
-
-    card.innerHTML = `
-      <div class="bet-main">
-        <div class="bet-left">
-          <div class="bet-match">${match}</div>
-          <div class="bet-market">${market}</div>
-          <div class="bet-selection">${selection}</div>
-          <div class="bet-meta">
-            <span class="pill">Odds ${escapeHtml(odds)}</span>
-            <span class="pill">Value ${escapeHtml(valuePct)}%</span>
-          </div>
-        </div>
-        <div class="bet-right">
-          <div class="bet-date">${escapeHtml(betDate)}</div>
-          <button class="add-btn ${isAdded ? "added" : ""}" data-key="${escapeHtml(key)}">
-            ${isAdded ? "Added" : "Add"}
-          </button>
-        </div>
-      </div>
+  // Desktop table row (shown via CSS in WIDE mode on large screens)
+  if(betsTbody){
+    const betDate = row.bet_date || (row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '');
+    const val = (row.value_pct ?? row.value_percent ?? row.value_percentage ?? row.value);
+    const valTxt = val != null ? Number(val).toFixed(1)+'%' : '—';
+    betsTbody.innerHTML += `
+      <tr>
+        <td><b>${escapeHtml(row.match||'')}</b></td>
+        <td>${escapeHtml(row.market||'')}</td>
+        <td><span class="pill">${escapeHtml(String(row.odds??''))}</span></td>
+        <td><span class="pill">${escapeHtml(valTxt)}</span></td>
+        <td>${escapeHtml(betDate)}</td>
+        <td>
+          <button class="btn ${isAdded ? 'added' : ''}" ${isAdded ? 'disabled' : ''} onclick='addToTracker(this, ${JSON.stringify(row)})'>${isAdded ? 'Added' : 'Add'}</button>
+        </td>
+      </tr>
     `;
-
-    freeBetsGrid.appendChild(card);
   }
-
-  // Hook up Add buttons (same handler as Value Bets)
-  freeBetsGrid.querySelectorAll(".add-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const key = btn.getAttribute("data-key");
-      if (!key) return;
-      if (addedBetKeys.has(key)) return;
-
-      const row = rows.find((r) => betKey(r) === key);
-      if (!row) return;
-
-      await addBetToTracker(row);
-      addedBetKeys.add(key);
-      saveAddedBetKeys();
-
-      btn.classList.add("added");
-      btn.textContent = "Added";
-    });
-  });
+});
 }
-
-
 
 
 async function addToTracker(btn, row){
@@ -367,8 +205,7 @@ async function addToTracker(btn, row){
     match: row.match,
     market: row.market,
     odds: row.odds,
-    bet_date: toLocalYMD(new Date()),
-    stake: 10,
+        stake: 10,
     result: "pending"
   };
 
@@ -756,38 +593,46 @@ borderWidth:2,
 }
 
 async function loadTracker(){
-  const today = toLocalYMD(new Date()); // YYYY-MM-DD
-  const { data, error } = await client
-    .from("bet_tracker")
-    .select("*")
-    .order("created_at", { ascending: true });
+const {data}=await client.from("bet_tracker").select("*").order("created_at",{ascending:true});
+const rows = data || [];
+trackerRowsCache = rows;
+trackerAllRows = rows;
 
-  if(error) console.warn("Tracker load error:", error);
+// Keep Value Bets \"Added\" state synced with tracker rows
+addedKeys.clear();
+rows.forEach(r => addedKeys.add(makeBetKey(r)));
+wireTrackerFilters();
 
-  let rows = (data || []);
+let start=parseFloat(document.getElementById("startingBankroll").value);
+let bankroll=start,profit=0,wins=0,losses=0,totalStake=0,totalOdds=0,history=[];
 
-  // Only show today's tracker entries (so it "resets" at midnight)
-  rows = rows.filter(r => {
-    const d = (r.bet_date || "").toString().slice(0,10);
-    if(d) return d === today;
-    // Back-compat: use created_at date if bet_date is missing
-    if(r.created_at){
-      return toLocalYMD(new Date(r.created_at)) === today;
-    }
-    return false;
-  });
+	let html="<table><tr><th class='date-col'>Date</th><th>Match</th><th>Stake</th><th>Result</th><th class='profit-col'>Profit</th></tr>";
 
-  trackerRowsCache = rows;
-  trackerAllRows = rows;
+rows.forEach(row=>{
+let p=0;
+if(row.result==="won"){p=row.stake*(row.odds-1);wins++;}
+if(row.result==="lost"){p=-row.stake;losses++;}
+profit+=p;totalStake+=row.stake;totalOdds+=row.odds;
+bankroll=start+profit;history.push(bankroll);
 
-  // Keep Value Bets "Added" state synced with tracker rows
-  addedKeys.clear();
-  rows.forEach(r => addedKeys.add(makeBetKey(r)));
-
-  wireTrackerFilters();
-
-  let start=parseFloat(document.getElementById("startingBank").value)||0;
-  calcAndRenderTracker(rows,start);
+const gameDate = row.match_date_date || row.bet_date || row.created_at;
+html+=`<tr>
+<td class="date-col">${fmtDayLabel(gameDate)}</td><td>${row.match}</td>
+<td><input type="number" value="${row.stake}" onchange="updateStake('${row.id}',this.value)"></td>
+<td>
+<select 
+class="result-select result-${row.result}" 
+onchange="updateResult('${row.id}',this.value)">
+<option value="pending" ${row.result==="pending"?"selected":""}>pending</option>
+<option value="won" ${row.result==="won"?"selected":""}>won</option>
+<option value="lost" ${row.result==="lost"?"selected":""}>lost</option>
+<option value="delete">🗑 delete</option>
+</select>
+</td>
+<td class="profit-col">
+<span class="${p>0?'profit-win':p<0?'profit-loss':''}">£${p.toFixed(2)}</span>
+</td>
+</tr>`;
 });
 
 html+="</table>";
@@ -927,7 +772,7 @@ if(val==="delete"){
 if(!confirm("Delete this bet?")){loadTracker();return;}
 await client.from("bet_tracker").delete().eq("id",id);
 // Refresh the Value Bets feed so the button switches back from "Added" to "Add".
-// init in DOMContentLoaded
+loadBets();
 }else{
 await client.from("bet_tracker").update({result:val}).eq("id",id);
 }
@@ -949,7 +794,7 @@ a.click();
 });
 }
 
-// init in DOMContentLoaded
+loadBets();
 loadTracker();
 
 
@@ -1221,78 +1066,3 @@ if(startingInput){
     localStorage.setItem("starting_bankroll", this.value);
   });
 }
-// --- Init auth + reload feed ---
-document.addEventListener('DOMContentLoaded', async () => {
-  const authBtn = document.getElementById('authButton');
-  if(authBtn){
-    authBtn.addEventListener('click', (e)=>{ e.preventDefault(); openAuthModal(); });
-  }
-
-  const modal = document.getElementById('authModal');
-  if(modal){
-    modal.addEventListener('click', (e)=>{
-      if(e.target && e.target.dataset && e.target.dataset.close) closeAuthModal();
-    });
-  }
-
-  document.getElementById('btnLogin')?.addEventListener('click', async ()=>{
-    const email = document.getElementById('authEmail')?.value?.trim();
-    const password = document.getElementById('authPassword')?.value ?? '';
-    if(!email || !password) return showMsg('Enter email + password.', true);
-
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    if(error) return showMsg(error.message || 'Login failed.', true);
-
-    showMsg('Logged in.');
-    await refreshSessionAndAccess();
-    await loadBets();
-    await loadTracker();
-  });
-
-  document.getElementById('btnSignup')?.addEventListener('click', async ()=>{
-    const email = document.getElementById('authEmail')?.value?.trim();
-    const password = document.getElementById('authPassword')?.value ?? '';
-    if(!email || !password) return showMsg('Enter email + password.', true);
-
-    const { error } = await client.auth.signUp({ email, password });
-    if(error) return showMsg(error.message || 'Sign up failed.', true);
-
-    showMsg('Check your email to confirm, then log in.');
-  });
-
-  document.getElementById('btnLogout')?.addEventListener('click', async ()=>{
-    await client.auth.signOut();
-    session = null;
-    accessActive = false;
-    setAuthButton();
-    renderSubscriptionGate();
-    showMsg('Logged out.');
-    await loadBets();
-  });
-
-  document.getElementById('btnClaimTrial')?.addEventListener('click', async ()=>{
-    if(!session) return showMsg('Log in first, then claim the trial.', true);
-    const { error } = await client.rpc('claim_trial');
-    if(error) return showMsg(error.message || 'Could not start trial.', true);
-    showMsg('Trial started. You have access for 5 days.');
-    await refreshSessionAndAccess();
-    await loadBets();
-  });
-
-  document.getElementById('btnClaimPromo')?.addEventListener('click', async ()=>{
-    if(!session) return showMsg('Log in first, then claim the £5 offer.', true);
-    const { error } = await client.rpc('claim_intro_offer');
-    if(error) return showMsg(error.message || 'Offer unavailable.', true);
-    showMsg('£5 intro offer claimed. You\'re active now.');
-    await refreshSessionAndAccess();
-    await loadBets();
-  });
-
-  client.auth.onAuthStateChange(async ()=>{
-    await refreshSessionAndAccess();
-    await loadBets();
-  });
-
-  await refreshSessionAndAccess();
-  await loadBets();
-});
